@@ -2,7 +2,7 @@
 Note, the command-line version of the tool can be started as:
   python -m manman.cli
 """
-__version__ = 'v0.1.3 2024-10-22'# Handle configuration directory
+__version__ = 'v0.1.4 2024-10-27'# 
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
 from importlib import import_module
@@ -11,17 +11,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 
 from . import helpers as H
 
-# Handle configuration directory upfront
-argv = sys.argv
-try:    configDir = argv[argv.index('-c')+1]
-except: configDir = '/operations/app_store/manman'
-if not os.path.exists(configDir):
-    print(f'ERROR: directory does not exist: {configDir}')
-    sys.exit(-1)
-sys.path.append(configDir)
-print(f'Configuration directory: {configDir}')
-
-Apparatus = H.list_of_apparatus(configDir)
+Apparatus = H.list_of_apparatus()
 
 ManCmds = ['Check','Start','Stop','Command']
 Col = {'Managers':0, 'status':1, 'action':2, 'response':3}
@@ -177,7 +167,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
       epilog=f'Version {__version__}')
-    parser.add_argument('-c', '--configDir', default=configDir, help=\
+    parser.add_argument('-c', '--configDir', default=H.ConfigDir, help=\
       'Directory, containing apparatus configuration scripts')
     parser.add_argument('-v', '--verbose', action='count', default=0, help=\
       'Show more log messages (-vv: show even more).')

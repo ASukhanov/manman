@@ -1,11 +1,12 @@
 '''Command line tool to start servers and managers
 '''
-__version__ = 'v0.1.0 2024-10-16'#
+__version__ = 'v0.1.4 2024-10-27'#
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
 from importlib import import_module
 
 from . import helpers as H
+
 Apparatus = H.list_of_apparatus()
 
 ManCmds = ['Check','Start','Stop','Command']
@@ -45,7 +46,7 @@ def manAction(manName, cmd):
 
     elif cmd == 'Stop':
         H.printv(f'stopping {manName}')
-        process = Main.startup[manName].get('process', f'{cmdstart}')
+        process = Startup[manName].get('process', f'{cmdstart}')
         cmd = f'pkill -f "{process}"'
         H.printv(f'executing: {cmd}')
         os.system(cmd)
@@ -60,7 +61,7 @@ def manAction(manName, cmd):
             cmd = f'cd {cd}; {cmdstart}'
         except Exception as e:
             cmd = cmdstart
-        H.print(f'Start command for "{manName}": "{cmd}"')
+        print(f'Start command for "{manName}": "{cmd}"')
         return os.EX_OK
 
 if __name__ == '__main__':
@@ -68,9 +69,8 @@ if __name__ == '__main__':
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
       epilog=f'Version {__version__}')
     parser.add_argument('-a','--apparatus', choices=Apparatus, default='TST', help='Which apparatus to control')
-#    foreground support is tricky, don't use it
-#    parser.add_argument('-f','--foreground', action='store_true',
-#help='Start manager in current terminal')
+    parser.add_argument('-c', '--configDir', default=H.ConfigDir, help=\
+      'Directory, containing apparatus configuration scripts')
     parser.add_argument('-m', '--manager', default='all',
 help='Apply command to a particular manager (or all) of the apparatus')
     parser.add_argument('-t', '--test', action='store_true',
@@ -84,7 +84,7 @@ help='Include non-operational (test) managers')
     # import the manager
     mname = 'manman.apparatus_'+pargs.apparatus
     module = import_module(mname)
-    #print(f'imported {mname} {module.__version__}')
+    print(f'imported {mname} {module.__version__}')
     Startup = module.startup
     mname = 'manman.apparatus_'+pargs.apparatus
     module = import_module(mname)
