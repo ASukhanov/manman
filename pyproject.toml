@@ -16,8 +16,6 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dependencies = [
-]
 [project.urls]
 "Homepage" = "https://github.com/ASukhanov/manman"
 "Bug Tracker" = "https://github.com/ASukhanov/manman/issues"

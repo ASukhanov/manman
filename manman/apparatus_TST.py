@@ -12,7 +12,7 @@ Supported keys are:
 '''
 import os
 homeDir = os.environ['HOME']
-__version__ = 'v0.0.3 2024-10-26'
+__version__ = 'v0.1.4 2024-10-29'
 
 # abbreviations:
 help,cmd,process,cd = ['help','cmd','process','cd']
