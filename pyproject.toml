@@ -8,6 +8,7 @@ version = "0.1.4"
 authors = [
   { name="Andrei Sukhanov", email="cyxandr@gmail.com" },
 ]
+
 description = "GUI for starting,stopping and checking managers (programs and servers)"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -16,7 +17,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 [project.urls]
 "Homepage" = "https://github.com/ASukhanov/manman"
-"Bug Tracker" = "https://github.com/ASukhanov/manman/issues"
 
