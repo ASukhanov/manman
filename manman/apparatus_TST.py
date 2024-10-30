@@ -1,8 +1,14 @@
 '''Definition of a test apparatus, running a liteServer with peak simulator.
-To install liteServer tools:
-  pip install liteserver
-  pip install pvplot
-  pip install pypeto
+The managers for this example could be installed with pip:
+  pip install liteserver pvplot pypeto
+
+The script should define dictionary startup.
+Supported keys are:
+  'cmd': command which will be used to start and stop the manager,
+  'cd:   directory (if needed), from where to run the cmd,
+  'process': used for stopping the manager, if cmd properly identifies the 
+     manager, then this key is not necessary,
+  'help': it will be used as a tooltip,
 '''
 import os
 homeDir = os.environ['HOME']
