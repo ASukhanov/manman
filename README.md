@@ -1,6 +1,6 @@
 # manman
-GUI for starting,stopping and checking managers (programs and servers).
-
+GUI for starting,stopping and checking managers (programs and servers).<br>
+Usage: ```python -m manman```<br>
 The following actions are defined in combobox, related to a manager:
   - **check**
   - **start**
@@ -8,8 +8,9 @@ The following actions are defined in combobox, related to a manager:
   - **command**: will display the command for starting the manager
 
 Definition of actions, associated with an apparatus, are defined in 
-python scripts code-named as apparatus_NAME.py.
-The script should define dictionary **startup**.
+python scripts code-named as apparatus_NAME.py. Scripts are imported from 
+directory, specified in --configDir option.
+The script should define a dictionary **startup**.
 
 Supported keys are:
   - **'cmd'**: command which will be used to start and stop the manager,
@@ -18,7 +19,7 @@ Supported keys are:
      manager, then this key is not necessary,
   - **'help'**: it will be used as a tooltip,
 
-See manman/apparatus_TST.py.
+See **manman/apparatus_TST.py**.
 
 ## Non-GUI usage
 For command line usage:
