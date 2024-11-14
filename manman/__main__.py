@@ -2,7 +2,8 @@
 Note, the command-line version of the tool can be started as:
   python -m manman.cli
 """
-__version__ = 'v0.1.4 2024-10-27'# 
+__version__ = 'v0.2.0 2024-11-14'# use process name for check, added shell option.
+#TODO: Avoid KeyboardInterrupt while in deferredCheck()
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
 from importlib import import_module
@@ -96,9 +97,11 @@ def manAction(manName, cmdObj):
     H.printv(f'manAction: {manName, cmd}')
     cmdstart = Main.startup[manName]['cmd']    
     rowPosition = Main.manRow[manName]
+    process = Main.startup[manName].get('process', f'{cmdstart}')
+
     if cmd == 'Check':
-        H.printv(f'checking process {cmdstart} ')
-        status = ['is stopped','is started'][H.is_process_running(cmdstart)]
+        H.printv(f'checking process {process} ')
+        status = ['is stopped','is started'][H.is_process_running(process)]
         item = Main.tw.item(rowPosition,Col['status'])
         if not 'tst_' in manName:
             color = 'pink' if 'stop' in status else 'lightGreen'
@@ -111,7 +114,7 @@ def manAction(manName, cmdObj):
         if not 'tst_' in manName:
             item.setBackground(QtGui.QColor('lightYellow'))
         item.setText('starting...')
-        if H.is_process_running(cmdstart):
+        if H.is_process_running(process):
             txt = f'ERR: Manager {manName} is already running.'
             #print(txt)
             Main.tw.item(rowPosition, Col['response']).setText(txt)
@@ -126,10 +129,12 @@ def manAction(manName, cmdObj):
                 return
             print(f'cd {path}')
 
-        cmdlist = cmdstart.split()
-        H.printv(f'popen: {cmdlist}')
+        expandedCmd = os.path.expanduser(cmdstart)
+        cmdlist = expandedCmd.split()
+        shell = Main.startup[manName].get('shell',False)
+        H.printv(f'popen: {cmdlist}, shell:{shell}')
         try:
-            process = subprocess.Popen(cmdlist, #close_fds=True,# env=my_env,
+            proc = subprocess.Popen(cmdlist, shell=shell, #close_fds=True,# env=my_env,
               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         except Exception as e:
             H.printv(f'Exception: {e}') 
@@ -139,7 +144,6 @@ def manAction(manName, cmdObj):
 
     elif cmd == 'Stop':
         H.printv(f'stopping {manName}')
-        process = Main.startup[manName].get('process', f'{cmdstart}')
         cmd = f'pkill -f "{process}"'
         H.printv(f'executing: {cmd}')
         os.system(cmd)
@@ -176,9 +180,10 @@ def main():
     #pargs.log = None# disable logging fo now
     H.Constant.verbose = pargs.verbose
 
+    # Do not do this section. Keyboard interrupt will kill all started servers!
     # arrange keyboard interrupt to kill the program
-    import signal
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    #import signal
+    #signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     mname = 'apparatus_'+pargs.apparatus
     module = import_module(mname)
@@ -197,7 +202,7 @@ def main():
         qApp.instance().exec_()
         #sys.exit(qApp.exec_())
     except Exception as e:#KeyboardInterrupt:
-        # # This exception never happens
+        # This exception never happens
         print('keyboard interrupt: exiting')
     print('Application exit')
 
