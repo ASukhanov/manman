@@ -36,7 +36,7 @@ def list_of_apparatus():
         print(f'Local configurtion directory: {cdir}')
     l = glob.glob(f'{cdir}/apparatus_*.py')
     l = [i.rsplit('/',1)[1].replace('apparatus_','').replace('.py','') for i in l]
-    print(f'Apparatuses: {l}')
+    #print(f'Apparatuses: {l}')
     return l
 
 def is_process_running(cmdstart):
