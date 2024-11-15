@@ -2,7 +2,7 @@
 Note, the command-line version of the tool can be started as:
   python -m manman.cli
 """
-__version__ = 'v0.2.0 2024-11-14'# use process name for check, added shell option.
+__version__ = 'v0.2.1 2024-11-14'# proper reporting when manager is running
 #TODO: Avoid KeyboardInterrupt while in deferredCheck()
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
@@ -17,6 +17,7 @@ Apparatus = H.list_of_apparatus()
 ManCmds = ['Check','Start','Stop','Command']
 Col = {'Managers':0, 'status':1, 'action':2, 'response':3}
 BoldFont = QtGui.QFont("Helvetica", 14, QtGui.QFont.Bold)
+LastColumnWidth=400
 
 qApp = QtWidgets.QApplication(sys.argv)
 
@@ -35,6 +36,7 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
     manRow = {}
     startup = None
     timer = QtCore.QTimer()
+    firstAction=True
 
     def __init__(self):
         Main.tw.setWindowTitle('manman')
@@ -93,6 +95,9 @@ def allManAction(cmd:str):
 
 def manAction(manName, cmdObj):
     # if called on click, then cmdObj is index in ManCmds, otherwise it is a string
+    if Main.firstAction:
+        Main.tw.setColumnWidth(3, LastColumnWidth)
+        Main.firstAction = False
     cmd = cmdObj if isinstance(cmdObj,str) else ManCmds[cmdObj]
     H.printv(f'manAction: {manName, cmd}')
     cmdstart = Main.startup[manName]['cmd']    
@@ -109,16 +114,16 @@ def manAction(manName, cmdObj):
         item.setText(status)
             
     elif cmd == 'Start':
+        if H.is_process_running(process):
+            txt = f'Is already running manager {manName}'
+            #print(txt)
+            Main.tw.item(rowPosition, Col['response']).setText(txt)
+            return
         H.printv(f'starting {manName}')
         item = Main.tw.item(rowPosition, Col['status'])
         if not 'tst_' in manName:
             item.setBackground(QtGui.QColor('lightYellow'))
         item.setText('starting...')
-        if H.is_process_running(process):
-            txt = f'ERR: Manager {manName} is already running.'
-            #print(txt)
-            Main.tw.item(rowPosition, Col['response']).setText(txt)
-            return
         path = Main.startup[manName].get('cd')
         if path:
             try:
@@ -127,7 +132,7 @@ def manAction(manName, cmdObj):
                 txt = f'ERR: in chdir: {e}'
                 Main.tw.item(rowPosition, Col['response']).setText(txt)
                 return
-            print(f'cd {path}')
+            print(f'cd {os.getcwd()}')
 
         expandedCmd = os.path.expanduser(cmdstart)
         cmdlist = expandedCmd.split()
