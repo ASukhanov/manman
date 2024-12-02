@@ -8,7 +8,7 @@ and test servers:
     tst_sleep30
 
 The demo servers and programs could be installed using pip:
-    pip install liteserver pypeto pvplot
+    pip install liteserver pypeto pvplot pyqtgraph
 
 '''
 __version__ = 'v0.2.3 2024-12-01'
@@ -23,13 +23,13 @@ startup = {
 #       Operational managers
 'peakSimulator':{
   help: 'Liteserver, simulating peaks and noise',
-  cd:   '~/github/liteServer',# This is needed if liteserver package is not installed
+  #cd:   '~/github/liteServer',# This is needed if liteserver package is not installed
   cmd:  'python3 -m liteserver.device.litePeakSimulator -ilo -p9710',  
   process:  'liteserver.device.litePeakSimulator',
   },
 'pet_peakSimulator':{
   help: 'Parameter editing tool for peakSimulator',
-  cmd:  'python -m pypeto -aLITE localhost;9710:dev1',
+  cmd:  'python3 -m pypeto -aLITE localhost;9710:dev1',
   },
 }
 if epics_home is not None:
