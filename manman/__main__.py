@@ -2,7 +2,7 @@
 Note, the command-line version of the tool can be started as:
   python -m manman.cli
 """
-__version__ = 'v0.2.1 2024-11-14'# proper reporting when manager is running
+__version__ = 'v0.2.2 2024-12-01'# print commands to be executed
 #TODO: Avoid KeyboardInterrupt while in deferredCheck()
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
@@ -125,15 +125,19 @@ def manAction(manName, cmdObj):
             item.setBackground(QtGui.QColor('lightYellow'))
         item.setText('starting...')
         path = Main.startup[manName].get('cd')
+        H.printi('Executing commands:')
         if path:
+            path = path.strip()
+            expandedPath = os.path.expanduser(path)
             try:
-                os.chdir(path)
+                os.chdir(expandedPath)
             except Exception as e:
                 txt = f'ERR: in chdir: {e}'
                 Main.tw.item(rowPosition, Col['response']).setText(txt)
                 return
             print(f'cd {os.getcwd()}')
 
+        print(cmdstart)
         expandedCmd = os.path.expanduser(cmdstart)
         cmdlist = expandedCmd.split()
         shell = Main.startup[manName].get('shell',False)
@@ -150,7 +154,7 @@ def manAction(manName, cmdObj):
     elif cmd == 'Stop':
         H.printv(f'stopping {manName}')
         cmd = f'pkill -f "{process}"'
-        H.printv(f'executing: {cmd}')
+        H.printi(f'Executing:\n{cmd}')
         os.system(cmd)
         time.sleep(0.1)
         manAction(manName, 'Check')
@@ -161,6 +165,7 @@ def manAction(manName, cmdObj):
             cmd = f'cd {cd}; {cmdstart}'
         except Exception as e:
             cmd = cmdstart
+        print(f'Command:\n{cmd}')
         Main.tw.item(rowPosition, Col['response']).setText(cmd)
         return
     # Action was completed successfully, cleanup the status cell

@@ -33,7 +33,7 @@ def list_of_apparatus():
         print(f'WARNING: Local configuration directory {cdir} does not exist, will use default modules.')
         return []
     else:
-        print(f'Local configurtion directory: {cdir}')
+        print(f'Local configuration directory: {cdir}')
     l = glob.glob(f'{cdir}/apparatus_*.py')
     l = [i.rsplit('/',1)[1].replace('apparatus_','').replace('.py','') for i in l]
     #print(f'Apparatuses: {l}')

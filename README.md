@@ -20,7 +20,8 @@ Supported keys are:
   - **'shell'**: some managers require shell=True option for subprocess.Popen()
   - **'help'**: it will be used as a tooltip,
 
-See **manman/apparatus_TST.py**.
+## Demo
+  python -m manman -c apparatus TST
 
 ## Non-GUI usage
 For command line usage:
