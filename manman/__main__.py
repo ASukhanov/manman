@@ -2,8 +2,10 @@
 Note, the command-line version of the tool can be started as:
   python -m manman.cli
 """
-__version__ = 'v0.2.2 2024-12-01'# print commands to be executed
+__version__ = 'v0.2.3 2025-03-09'# Periodic check
 #TODO: Avoid KeyboardInterrupt while in deferredCheck()
+#TODO: Clean comboboxes
+
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
 from importlib import import_module
@@ -75,6 +77,10 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
             Main.tw.setCellWidget(rowPosition, Col['action'], sb)
             Main.tw.setItem(rowPosition, Col['response'],
               QtWidgets.QTableWidgetItem(''))
+        if pargs.interval != 0.:
+            Main.timer.timeout.connect(periodicCheck)
+            Main.timer.setInterval(int(pargs.interval*1000.))
+            Main.timer.start()
         Main.tw.show()
 
 def wideRow(rowPosition,txt):
@@ -89,8 +95,8 @@ def wideRow(rowPosition,txt):
 def allManAction(cmd:str):
     H.printv(f'allManAction: {cmd}')
     for manName in Main.startup:
-        if manName.startswith('tst'):
-            continue
+        #if manName.startswith('tst'):
+        #    continue
         manAction(manName, cmd)
 
 def manAction(manName, cmdObj):
@@ -99,9 +105,9 @@ def manAction(manName, cmdObj):
         Main.tw.setColumnWidth(3, LastColumnWidth)
         Main.firstAction = False
     cmd = cmdObj if isinstance(cmdObj,str) else ManCmds[cmdObj]
+    rowPosition = Main.manRow[manName]
     H.printv(f'manAction: {manName, cmd}')
     cmdstart = Main.startup[manName]['cmd']    
-    rowPosition = Main.manRow[manName]
     process = Main.startup[manName].get('process', f'{cmdstart}')
 
     if cmd == 'Check':
@@ -136,7 +142,6 @@ def manAction(manName, cmdObj):
                 Main.tw.item(rowPosition, Col['response']).setText(txt)
                 return
             print(f'cd {os.getcwd()}')
-
         print(cmdstart)
         expandedCmd = os.path.expanduser(cmdstart)
         cmdlist = expandedCmd.split()
@@ -177,12 +182,18 @@ def deferredCheck(args):
     if 'start' not in Main.tw.item(rowPosition, Col['status']).text():
         Main.tw.item(rowPosition, Col['response']).setText('Failed to start')
 
+def periodicCheck():
+    allManAction('Check')
+
 def main():
+    global pargs
     parser = argparse.ArgumentParser(description=__doc__,
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
       epilog=f'Version {__version__}')
     parser.add_argument('-c', '--configDir', default=H.ConfigDir, help=\
       'Directory, containing apparatus configuration scripts')
+    parser.add_argument('-t', '--interval', default=10., help=\
+      'Interval in seconds of periodic checking. If 0 then no checking')
     parser.add_argument('-v', '--verbose', action='count', default=0, help=\
       'Show more log messages (-vv: show even more).')
     parser.add_argument('apparatus', nargs='?', choices=Apparatus, default='TST')
