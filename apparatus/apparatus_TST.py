@@ -23,13 +23,13 @@ startup = {
 #       Operational managers
 # liteServer-based
 'peakSimulator':{
-  cmd:'python3 -m liteserver.device.litePeakSimulator -ilo -p9710',help:
+  cmd:'python3 -m liteserver.device.litePeakSimulator -ilo -p9701',help:
   'Lite server, simulating peaks and noise'},
 'plot it':{
-  cmd:'python3 -m pvplot -aL:localhost;9710:dev1: x,y',help:
+  cmd:'python3 -m pvplot -aL:localhost;9701:dev1: x,y',help:
   'Plotting tool for peakSimulator'},
 'control it':{
-  cmd:'python3 -m pypeto -aLITE localhost;9710:dev1',help:
+  cmd:'python3 -m pypeto -aLITE localhost;9701:dev1',help:
   'Spreadsheet-based control of peakSimulator parameters'},
 }
 if epics_home is not None:
