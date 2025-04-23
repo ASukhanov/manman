@@ -1,8 +1,6 @@
 """GUI for Starting/stopping managers and servers.
-Note, the command-line version of the tool can be started as:
-  python -m manman.cli
 """
-__version__ = 'v0.2.3 2025-03-09'# Periodic check
+__version__ = 'v0.3.0 2025-04-23'# Erase response only on Start. Added Edit.
 #TODO: Avoid KeyboardInterrupt while in deferredCheck()
 #TODO: Clean comboboxes
 
@@ -47,7 +45,7 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
         wideRow(0,'Operational Managers')
         Main.tw.insertRow(1)
         sb = QtWidgets.QComboBox()
-        sb.addItems(['Check All','Start All','Stop All'])
+        sb.addItems(['Check All','Start All','Stop All', 'Edit '])
         sb.activated.connect(allManAction)
         Main.tw.setCellWidget(1, Col['action'], sb)
 
@@ -92,12 +90,18 @@ def wideRow(rowPosition,txt):
     item.setFont(BoldFont)
     Main.tw.setItem(rowPosition, Col['Managers'], item)
 
-def allManAction(cmd:str):
-    H.printv(f'allManAction: {cmd}')
+def allManAction(cmdidx:int):
+    H.printv(f'allManAction: {cmdidx}')
+    if cmdidx == 3:
+        _edit()
+        return
     for manName in Main.startup:
         #if manName.startswith('tst'):
         #    continue
-        manAction(manName, cmd)
+        manAction(manName, cmdidx)
+
+def _edit():
+    subprocess.call(['xdg-open', pargs.configFile])
 
 def manAction(manName, cmdObj):
     # if called on click, then cmdObj is index in ManCmds, otherwise it is a string
@@ -120,6 +124,7 @@ def manAction(manName, cmdObj):
         item.setText(status)
             
     elif cmd == 'Start':
+        Main.tw.item(rowPosition, Col['response']).setText('')
         if H.is_process_running(process):
             txt = f'Is already running manager {manName}'
             #print(txt)
@@ -157,6 +162,7 @@ def manAction(manName, cmdObj):
         Main.timer.singleShot(5000,partial(deferredCheck,(manName,rowPosition)))
 
     elif cmd == 'Stop':
+        Main.tw.item(rowPosition, Col['response']).setText('')
         H.printv(f'stopping {manName}')
         cmd = f'pkill -f "{process}"'
         H.printi(f'Executing:\n{cmd}')
@@ -174,7 +180,6 @@ def manAction(manName, cmdObj):
         Main.tw.item(rowPosition, Col['response']).setText(cmd)
         return
     # Action was completed successfully, cleanup the status cell
-    Main.tw.item(rowPosition, Col['response']).setText('')
 
 def deferredCheck(args):
     manName,rowPosition = args
@@ -207,6 +212,8 @@ def main():
     #signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     mname = 'apparatus_'+pargs.apparatus
+    pargs.configFile = f'{pargs.configDir}/{mname}.py'
+    print(f'Config file: {pargs.configFile}')
     module = import_module(mname)
     #print(f'imported {mname} {module.__version__}')
     Main.startup = module.startup
