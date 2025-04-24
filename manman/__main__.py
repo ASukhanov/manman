@@ -1,8 +1,8 @@
 """GUI for Starting/stopping managers and servers.
 """
-__version__ = 'v0.3.0 2025-04-23'# Erase response only on Start. Added Edit.
+__version__ = 'v0.3.12 2025-04-24'# Reduce row height.
 #TODO: Avoid KeyboardInterrupt while in deferredCheck()
-#TODO: Clean comboboxes
+#TODO: Use QTableView instead of QTableWidget, it is more flexible
 
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
@@ -58,6 +58,7 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
                     wideRow(rowPosition,'Test Managers')
                     rowPosition += 1
             Main.tw.insertRow(rowPosition)
+            Main.tw.setRowHeight(rowPosition, 1)# no effect if it is less than 25
             self.manRow[manName] = rowPosition
             item = QtWidgets.QTableWidgetItem(manName)
             item.setTextAlignment(QtCore.Qt.AlignCenter)
@@ -72,6 +73,8 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
             sb = QtWidgets.QComboBox()
             sb.addItems(ManCmds)
             sb.activated.connect(partial(manAction,manName))
+            try:    sb.setToolTip(Main.startup[manName]['help'])
+            except: pass
             Main.tw.setCellWidget(rowPosition, Col['action'], sb)
             Main.tw.setItem(rowPosition, Col['response'],
               QtWidgets.QTableWidgetItem(''))
@@ -116,10 +119,10 @@ def manAction(manName, cmdObj):
 
     if cmd == 'Check':
         H.printv(f'checking process {process} ')
-        status = ['is stopped','is started'][H.is_process_running(process)]
+        status = ['not running','is started'][H.is_process_running(process)]
         item = Main.tw.item(rowPosition,Col['status'])
         if not 'tst_' in manName:
-            color = 'pink' if 'stop' in status else 'lightGreen'
+            color = 'lightGreen' if 'started' in status else 'pink'
             item.setBackground(QtGui.QColor(color))
         item.setText(status)
             
