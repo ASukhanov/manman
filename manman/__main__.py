@@ -1,7 +1,6 @@
-"""GUI for Starting/stopping managers and servers.
+"""GUI for Starting/stopping applications.
 """
-__version__ = 'v0.3.12 2025-04-24'# Reduce row height.
-#TODO: Avoid KeyboardInterrupt while in deferredCheck()
+__version__ = 'v0.3.2 2025-04-24'# Dense packing
 #TODO: Use QTableView instead of QTableWidget, it is more flexible
 
 import sys, os, time, subprocess, argparse, threading
@@ -42,12 +41,13 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
         Main.tw.setWindowTitle('manman')
         Main.tw.setColumnCount(4)
         Main.tw.setHorizontalHeaderLabels(Col.keys())
-        wideRow(0,'Operational Managers')
-        Main.tw.insertRow(1)
+        wideRow(0,'Operational Apps')
+        
         sb = QtWidgets.QComboBox()
         sb.addItems(['Check All','Start All','Stop All', 'Edit '])
         sb.activated.connect(allManAction)
-        Main.tw.setCellWidget(1, Col['action'], sb)
+        sb.setToolTip('Execute selected action for all applications')
+        Main.tw.setCellWidget(0, Col['action'], sb)
 
         operationalManager = True
         for manName in Main.startup:
@@ -55,10 +55,10 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
             if manName.startswith('tst_'):
                 if operationalManager:
                     operationalManager = False
-                    wideRow(rowPosition,'Test Managers')
+                    wideRow(rowPosition,'Test Apps')
+                    
                     rowPosition += 1
-            Main.tw.insertRow(rowPosition)
-            Main.tw.setRowHeight(rowPosition, 1)# no effect if it is less than 25
+            insertRow(rowPosition)
             self.manRow[manName] = rowPosition
             item = QtWidgets.QTableWidgetItem(manName)
             item.setTextAlignment(QtCore.Qt.AlignCenter)
@@ -85,13 +85,17 @@ class Main():# it may sense to subclass it from QtWidgets.QMainWindow
         Main.tw.show()
 
 def wideRow(rowPosition,txt):
-    Main.tw.insertRow(rowPosition)
-    Main.tw.setSpan(rowPosition,0,1,3)
+    insertRow(rowPosition)
+    Main.tw.setSpan(rowPosition,0,1,2)
     item = QtWidgets.QTableWidgetItem(txt)
     item.setTextAlignment(QtCore.Qt.AlignCenter)
     item.setBackground(QtGui.QColor('lightGray'))
     item.setFont(BoldFont)
     Main.tw.setItem(rowPosition, Col['Managers'], item)
+
+def insertRow(rowPosition):
+    Main.tw.insertRow(rowPosition)
+    Main.tw.setRowHeight(rowPosition, 1)  
 
 def allManAction(cmdidx:int):
     H.printv(f'allManAction: {cmdidx}')
