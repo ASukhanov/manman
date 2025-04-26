@@ -22,35 +22,45 @@ help,cmd,process,cd = ['help','cmd','process','cd']
 startup = {
 #       Operational managers
 # liteServer-based
-'peakSimulator':{
-  cmd:'python3 -m liteserver.device.litePeakSimulator -ilo -p9701',help:
-  'Lite server, simulating peaks and noise'},
-'plot it':{
-  cmd:'python3 -m pvplot -aL:localhost;9701:dev1: x,y',help:
-  'Plotting tool for peakSimulator'},
-'control it':{
-  cmd:'python3 -m pypeto -aLITE localhost;9701:dev1',help:
-  'Spreadsheet-based control of peakSimulator parameters'},
+'peakSimulator':{help:
+  'Lite server, simulating peaks and noise',
+  cmd:'python3 -m liteserver.device.litePeakSimulator -ilo -p9701',
+  },
+'plot it':{help:
+  'Plotting tool for peakSimulator',
+  cmd:'python3 -m pvplot -aL:localhost;9701:dev1: x,y',
+  },
+'control it':{help:
+  'Automatic parameter editing tool of the peakSimulator',
+  cmd:'python3 -m pypeto -aLITE localhost;9701:dev1',
+  },
+'control&plot':{help:
+  'Parameter editing with integrated plot',
+  cmd:'python3 -m pypeto -c config -f peakSimPlot',
+  #Note: It will look for config file: config/peakSimPlot_pp.py
+  },
 }
 if epics_home is not None:
     startup.update({
 # EPICS IOCs
-'simScope':{
+'simScope':{help:
+  'EPICS testAsynPortDriver, hosting a simulate oscilloscope',
   cd:f'{epics_home}/asyn/iocBoot/ioctestAsynPortDriver/',
   cmd:'screen -d -m -S simScope ../../bin/linux-x86_64/testAsynPortDriver st.cmd',
-  process:'testAsynPortDriver st.cmd',
-  help:'EPICS testAsynPortDriver, hosting a simulate oscilloscope'
+  process:'testAsynPortDriver st.cmd', 
 },
 #'tst_caproto_ioc':  {cmd:'python3 -m caproto.ioc_examples.simple --list-pvs',help:
 #  'Simple IOC for testing EPICS Channel Access functionality'},
-
-'pet_simScope':{
-  help: 'Parameter editing tool for simScope',
+'pet_simScope':{help:
+  'Parameter editing tool for simScope',
   cmd:  'python3 -m pypeto -f Controls/EPICS/simScope',
   },
 })
 
 #       Managers for testing and debugging
 startup.update({
-'tst_sleep30':      {cmd:'sleep 30', help: 'sleep for 30 seconds', process:'sleep 30'},
+'tst_sleep30':{help:
+  'sleep for 30 seconds', 
+  cmd:'sleep 30', process:'sleep 30'
+  },
 })

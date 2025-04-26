@@ -21,7 +21,7 @@ Supported keys are:
   - **'help'**: it will be used as a tooltip,
 
 ## Demo
-  python -m manman -c apparatus TST
+  python -m manman -c config TST
 
 ## Non-GUI usage
 For command line usage:
