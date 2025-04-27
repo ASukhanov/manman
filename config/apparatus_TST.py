@@ -14,7 +14,7 @@ import os
 homeDir = os.environ['HOME']
 epics_home = os.environ.get('EPICS_HOME')
 
-__version__ = 'v0.1.4 2024-10-29'
+__version__ = 'v0.1.5 2025-04-26'# added 'process' to better track of processes
 
 # abbreviations:
 help,cmd,process,cd = ['help','cmd','process','cd']
@@ -24,19 +24,23 @@ startup = {
 # liteServer-based
 'peakSimulator':{help:
   'Lite server, simulating peaks and noise',
-  cmd:'python3 -m liteserver.device.litePeakSimulator -ilo -p9701',
+  cmd:		'python3 -m liteserver.device.litePeakSimulator -ilo -p9701',
+  process:	'liteserver.device.litePeakSimulator -ilo -p9701',
   },
 'plot it':{help:
   'Plotting tool for peakSimulator',
-  cmd:'python3 -m pvplot -aL:localhost;9701:dev1: x,y',
+  cmd:		'python3 -m pvplot -aL:localhost;9701:dev1: x,y',
+  process:	'pvplot -aL:localhost;9701:dev1: x,y',
   },
 'control it':{help:
   'Automatic parameter editing tool of the peakSimulator',
-  cmd:'python3 -m pypeto -aLITE localhost;9701:dev1',
+  cmd:		'python3 -m pypeto -aLITE localhost;9701:dev1',
+  process:	'pypeto -aLITE localhost;9701:dev1',
   },
 'control&plot':{help:
   'Parameter editing with integrated plot',
-  cmd:'python3 -m pypeto -c config -f peakSimPlot',
+  cmd:		'python3 -m pypeto -c config -f peakSimPlot',
+  process:	'pypeto -c config -f peakSimPlot',
   #Note: It will look for config file: config/peakSimPlot_pp.py
   },
 }

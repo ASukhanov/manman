@@ -1,6 +1,7 @@
-"""GUI for Starting/stopping applications.
+"""GUI for application deployment and monitoring of servers and 
+applications related to specific apparatus.
 """
-__version__ = 'v0.3.2 2025-04-24'# Dense packing
+__version__ = 'v0.3.3 2025-04-26'# Minor corrections, cleanup
 #TODO: Use QTableView instead of QTableWidget, it is more flexible
 
 import sys, os, time, subprocess, argparse, threading
@@ -199,7 +200,8 @@ def periodicCheck():
 
 def main():
     global pargs
-    parser = argparse.ArgumentParser(description=__doc__,
+    parser = argparse.ArgumentParser('python -m manman',
+      description=__doc__,
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
       epilog=f'Version {__version__}')
     parser.add_argument('-c', '--configDir', default=H.ConfigDir, help=\
@@ -208,15 +210,11 @@ def main():
       'Interval in seconds of periodic checking. If 0 then no checking')
     parser.add_argument('-v', '--verbose', action='count', default=0, help=\
       'Show more log messages (-vv: show even more).')
-    parser.add_argument('apparatus', nargs='?', choices=Apparatus, default='TST')
+    parser.add_argument('apparatus', help=\
+      'Apparatus', nargs='?', choices=Apparatus, default='TST')
     pargs = parser.parse_args()
     #pargs.log = None# disable logging fo now
     H.Constant.verbose = pargs.verbose
-
-    # Do not do this section. Keyboard interrupt will kill all started servers!
-    # arrange keyboard interrupt to kill the program
-    #import signal
-    #signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     mname = 'apparatus_'+pargs.apparatus
     pargs.configFile = f'{pargs.configDir}/{mname}.py'

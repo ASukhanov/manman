@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "manman"
-version = "0.3.2"
+version = "0.3.3"
 authors = [
   { name="Andrei Sukhanov", email="cyxandr@gmail.com" },
 ]
 
-description = "GUI for starting,stopping and checking managers (programs and servers)"
+description = "GUI for deployment and monitoring of servers and applications"
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
