@@ -2,11 +2,9 @@
 GUI for deployment and monitoring of servers and applications related to specific apparatus..<br>
 ```
 usage: python -m manman [-h] [-c CONFIGDIR] [-t INTERVAL] [-v] [apparatus ...]
-
 positional arguments:
   apparatus             Apparatus config files, if not supplied then interactive
                         dialog will open to select files.
-
 options:
   -c CONFIGDIR, --configDir CONFIGDIR
                         Root directory of config files.
@@ -33,5 +31,6 @@ Supported keys are:
   - **'help'**: it will be used as a tooltip,
 
 ## Demo
-  python -m manman -c config apparatus_test.py apparatus_TST.py
+  python -m manman -c config apparatus_test.py apparatus_TST.py<br>
+![manman](docs/manman.png)
 
