@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "manman"
-version = "0.4.0"
+version = "0.5.0"
 authors = [
   { name="Andrei Sukhanov", email="cyxandr@gmail.com" },
 ]
@@ -16,6 +16,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+]
+dependencies = [
+    "qtpy",
 ]
 
 [project.urls]

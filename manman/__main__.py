@@ -1,5 +1,5 @@
 """GUI for application deployment and monitoring of servers and 
-applications related to specific apparatus.
+applications related to specific apparatuses.
 """
 __version__ = 'v0.4.1 2025-05-23'# 
 
@@ -16,13 +16,14 @@ def main():
       formatter_class=argparse.ArgumentDefaultsHelpFormatter,
       epilog=f'Version {manman.__version__}')
     parser.add_argument('-c', '--configDir', help=\
-      'Root directory of config files')
+      'Root directory of config files, one config file per apparatus')
     parser.add_argument('-t', '--interval', default=10., help=\
       'Interval in seconds of periodic checking. If 0 then no checking')
     parser.add_argument('-v', '--verbose', action='count', default=0, help=\
       'Show more log messages (-vv: show even more).')
-    parser.add_argument('apparatus', help=\
-      'Apparatus config files', nargs='*')
+    parser.add_argument('apparatus', nargs='*', help=\
+      ('Apparatus config files, if None, then an interactive dialog '
+       'will be opened to select files')),
     pargs = parser.parse_args()
     helpers.Verbose = pargs.verbose
     if pargs.configDir is None and len(pargs.apparatus) == 0:
