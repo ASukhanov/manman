@@ -35,12 +35,12 @@ Supported keys are:
   - **'help'**: it will be used as a tooltip,
 
 ## Demo
-  - python -m manman config/apparatus_*.py
+  - **python -m manman config/apparatus_*.py**<br>
 Control all apparatuses, defined in the ./config directory.
 Each apparatus will be controlled in separate tab.
-  - python -m manman -c config apparatus_test.py apparatus_TST.py
+  - **python -m manman -c config apparatus_test.py apparatus_TST.py**<br>
 Control two apparatuses from the ./config directory
-  - python -m manman -c config
-Interacively select apparatuses from the ./config directory
+  - **python -m manman -c config**<br>
+Interacively select apparatuses from the ./config directory<br>
 ![manman](docs/manman.png)
 
