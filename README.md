@@ -1,5 +1,5 @@
 # manman
-GUI for application deployment and monitoring of servers and applications
+GUI for deployment and monitoring of servers and applications
 related to specific apparatuses.<br>
 ```
 usage: python -m manman [-h] [-c CONFIGDIR] [-t INTERVAL] [-v] [apparatus ...]
