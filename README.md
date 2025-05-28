@@ -1,18 +1,22 @@
 # manman
-GUI for deployment and monitoring of servers and applications related to specific apparatus..<br>
+GUI for application deployment and monitoring of servers and applications
+related to specific apparatuses.<br>
 ```
 usage: python -m manman [-h] [-c CONFIGDIR] [-t INTERVAL] [-v] [apparatus ...]
 positional arguments:
-  apparatus             Apparatus config files, if not supplied then interactive
-                        dialog will open to select files.
+  apparatus             Path of apparatus config files, can include wildcards.
+                        If None, then an interactive dialog will be opened to
+                        select files. (default: None)
 options:
   -c CONFIGDIR, --configDir CONFIGDIR
-                        Root directory of config files.
+                        Root directory of config files, one config file per
+                        apparatus, if None, then ./config directory will be
+                        used (default: None)
   -t INTERVAL, --interval INTERVAL
                         Interval in seconds of periodic checking. If 0 then no
                         checking (default: 10.0)
 ```
-The following actions are defined in combobox, related to a manager:
+The following actions are defined in the combobox, related to the application:
   - **Check**
   - **Start**
   - **Stop**
@@ -31,6 +35,12 @@ Supported keys are:
   - **'help'**: it will be used as a tooltip,
 
 ## Demo
-  python -m manman -c config apparatus_test.py apparatus_TST.py<br>
+  - python -m manman config/apparatus_*.py
+Control all apparatuses, defined in the ./config directory.
+Each apparatus will be controlled in separate tab.
+  - python -m manman -c config apparatus_test.py apparatus_TST.py
+Control two apparatuses from the ./config directory
+  - python -m manman -c config
+Interacively select apparatuses from the ./config directory
 ![manman](docs/manman.png)
 

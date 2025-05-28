@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v0.5.0 2025-05-27'# main() is separated to __main__.py, qtpy, 
+__version__ = 'v0.5.1 2025-05-28'# Improved error handling
 
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
@@ -17,17 +17,18 @@ ManCmds = ['Check','Start','Stop','Command']
 Col = {'Applications':0, 'status':1, 'action':2, 'response':3}
 BoldFont = QtGui.QFont("Helvetica", 14, QtGui.QFont.Bold)
 LastColumnWidth=400
+FilePrefix = 'apparatus_'
 
 #``````````````````Helpers````````````````````````````````````````````````````
-def select_files_interactively(directory, title='Select apparatus_* files'):
+def select_files_interactively(directory, title=f'Select {FilePrefix}*.py files'):
     dialog = QW.QFileDialog()
     dialog.setFileMode( QW.QFileDialog.FileMode() )
-    ffilter = 'pypet (apparatus_*)'
+    ffilter = f'pypet ({FilePrefix}*.py)'
     files = dialog.getOpenFileNames( None, title, directory, ffilter)[0]
     return files
 
 def create_folderMap():
-    # create map of {folder1: [file1,...], folder2...}
+    # create map of {folder1: [file1,...], folder2...} from pargs.apparatus
     #print(f'c,a: {Window.pargs.configDir, Window.pargs.apparatus}')
     folders = {}
     if Window.pargs.configDir is None:
@@ -40,8 +41,8 @@ def create_folderMap():
             files = [absfolder+'/'+i for i in Window.pargs.apparatus]
     for f in files:
         folder,tail = os.path.split(f)
-        if not (tail.startswith('apparatus_') and tail.endswith('.py')):
-            H.printe('Config file should have prefix "apparatus_" and suffix ".py"')
+        if not (tail.startswith(FilePrefix) and tail.endswith('.py')):
+            H.printe(f'Config file should have prefix {FilePrefix} and suffix ".py"')
             sys.exit(1)
         if folder not in folders:
             folders[folder] = []
@@ -89,6 +90,8 @@ class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
         super().__init__()
         H.Verbose = Window.pargs.verbose
         folders = create_folderMap()
+        if len(folders) == 0:
+            sys.exit(1)
         H.printi(f'Configuration files: {folders}')
 
         # create tabWidget
@@ -103,7 +106,7 @@ class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
                 mytable = self.create_mytable(folder, fname)
                 Window.tableWidgets.append(mytable)
                 #print(f'Adding tab: {fname}')
-                Window.tabWidget.addTab(mytable, fname[:-3])
+                Window.tabWidget.addTab(mytable, fname[len(FilePrefix):-3])
 
         self.setWindowTitle('manman')
         #self.show()
@@ -117,7 +120,11 @@ class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
     def create_mytable(self, folder, fname):
         mname = fname[:-3]
         H.printv(f'importing {mname}')
-        module = import_module(mname)
+        try:
+            module = import_module(mname)
+        except SyntaxError as e:
+            H.printe(f'Syntax Error in {fname}: {e}')
+            sys.exit(1)
         H.printv(f'imported {mname} {module.__version__}')
         startup = module.startup
 

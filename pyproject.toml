@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "manman"
-version = "0.5.0"
+version = "0.5.1"
 authors = [
   { name="Andrei Sukhanov", email="cyxandr@gmail.com" },
 ]
@@ -23,4 +23,3 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://github.com/ASukhanov/manman"
-
