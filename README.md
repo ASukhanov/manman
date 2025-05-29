@@ -18,7 +18,7 @@ options:
                         Interval in seconds of periodic checking. If 0 then no
                         checking (default: 10.0)
   -z ZOOMIN, --zoomin ZOOMIN
-                        Zoom the application window by a factor, factor must
+                        Scale the application window by a factor, it must
                         be >= 1 (default: None)
 ```
 ## Control of all applications in a table

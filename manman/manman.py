@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v1.0.0 2025-05-29'# many fixes and additions 
+__version__ = 'v1.0.1 2025-05-29'# FilePrefix = 'apparatus', files are sorted
 #TODO: xdg_open does not launch if other editors not running. 
 
 import sys, os, time, subprocess, argparse, threading
@@ -19,7 +19,7 @@ AllManActions = ['Check All','Start All','Stop All', 'Edit', 'Delete',
                 'Condense', 'Uncondense']
 Col = {'Applications':0, 'status':1, 'action':2, 'response':3}
 BoldFont = QtGui.QFont("Helvetica", 14, QtGui.QFont.Bold)
-FilePrefix = 'apparatus_'
+FilePrefix = 'apparatus'
 
 #``````````````````Helpers````````````````````````````````````````````````````
 def select_files_interactively(directory, title=f'Select {FilePrefix}*.py files'):
@@ -41,6 +41,7 @@ def create_folderMap():
             files = select_files_interactively(absfolder)
         else:
             files = [absfolder+'/'+i for i in Window.pargs.apparatus]
+    print(f'files: {files}')
     for f in files:
         folder,tail = os.path.split(f)
         if not (tail.startswith(FilePrefix) and tail.endswith('.py')):
@@ -49,6 +50,9 @@ def create_folderMap():
         if folder not in folders:
             folders[folder] = []
         folders[folder].append(tail)
+    # sort the file lists
+    for folder in folders:
+        folders[folder].sort()
     return folders
 
 def launch_default_editor(configFile):

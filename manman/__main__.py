@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatuses.
 """
-__version__ = 'v0.5.2 2025-05-28'# added --zoomin 
+__version__ = 'v1.0.0 2025-05-28'# added --condensed
 
 import sys, os, argparse
 from qtpy.QtWidgets import QApplication
@@ -29,7 +29,6 @@ def main():
       ('Path of apparatus config files, can include wildcards. '
        'If None, then an interactive dialog will be opened to select files.')),
     pargs = parser.parse_args()
-    print(f'condensed: {pargs.condensed}')
     helpers.Verbose = pargs.verbose
     if pargs.configDir is None and len(pargs.apparatus) == 0:
         pargs.configDir = 'config'
