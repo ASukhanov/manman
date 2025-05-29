@@ -8,8 +8,10 @@ __version__ = 'v0.0.1 2025-05-21'#
 # abbreviations:
 help,cmd,process,cd = ['help','cmd','process','cd']
 
+#``````````````````Properties, used by manman`````````````````````````````````
+title = 'Test applications'
+
 startup = {
-#       Operational managers
 'xclock':{help:'Digital xclock', 
   cmd:'xclock -digital'
   },

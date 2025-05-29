@@ -1,7 +1,8 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v0.5.1 2025-05-28'# Improved error handling
+__version__ = 'v1.0.0 2025-05-29'# many fixes and additions 
+#TODO: xdg_open does not launch if other editors not running. 
 
 import sys, os, time, subprocess, argparse, threading
 from functools import partial
@@ -13,10 +14,11 @@ from . import helpers as H
 from . import detachable_tabs
 
 #``````````````````Constants``````````````````````````````````````````````````
-ManCmds = ['Check','Start','Stop','Command']
+ManCmds =       ['Check',    'Start',    'Stop',     'Command']
+AllManActions = ['Check All','Start All','Stop All', 'Edit', 'Delete',
+                'Condense', 'Uncondense']
 Col = {'Applications':0, 'status':1, 'action':2, 'response':3}
 BoldFont = QtGui.QFont("Helvetica", 14, QtGui.QFont.Bold)
-LastColumnWidth=400
 FilePrefix = 'apparatus_'
 
 #``````````````````Helpers````````````````````````````````````````````````````
@@ -50,7 +52,9 @@ def create_folderMap():
     return folders
 
 def launch_default_editor(configFile):
-    subprocess.call(['xdg-open', configFile])
+    cmd = f'xdg-open {configFile}'
+    H.printi(f'Launching editor: {cmd}')
+    subprocess.call(cmd.split())
 
 def is_process_running(cmdstart):
     try:
@@ -67,24 +71,131 @@ class MyTable(QW.QTableWidget):
         self.startup = startup
         self.configFile = configFile
 
-    """ Help windows to adjust geometry
-    def sizeHint(self):
-        hh = self.horizontalHeader()
-        vh = self.verticalHeader()
-        fw = self.frameWidth() * 2
-        return QtCore.QSize(
-            hh.length() + vh.sizeHint().width() + fw,
-            vh.length() + hh.sizeHint().height() + fw)
-    """
+    def manAction(self, manName, cmdIdx):
+        # if called on click, then cmdIdx is index in ManCmds, otherwise it is a string
+        #mytable = current_mytable()
+        mytable = self
+        #cmd = cmdIdx if isinstance(cmdIdx,str) else ManCmds[cmdIdx]
+        try:
+            cmd = ManCmds[cmdIdx]
+        except Exception as e:
+            H.printw(f'ManName,cmdIdx = {manName,cmdIdx}')
+            return
+        rowPosition = Window.manRow[manName]
+        #H.printvv(f'manAction: {manName, cmd}')
+        startup = mytable.startup
+        cmdstart = startup[manName]['cmd']
+        process = startup[manName].get('process', f'{cmdstart}')
+
+        if cmd == 'Check':
+            H.printvv(f'checking process {process} ')
+            status = ['not running','is started'][is_process_running(process)]
+            item = mytable.item(rowPosition,Col['status'])
+            if not 'tst_' in manName:
+                color = 'lightGreen' if 'started' in status else 'pink'
+                item.setBackground(QtGui.QColor(color))
+            item.setText(status)
+
+        elif cmd == 'Start':
+            mytable.item(rowPosition, Col['response']).setText('')
+            if is_process_running(process):
+                txt = f'Is already running manager {manName}'
+                #print(txt)
+                mytable.item(rowPosition, Col['response']).setText(txt)
+                return
+            H.printv(f'starting {manName}')
+            item = mytable.item(rowPosition, Col['status'])
+            if not 'tst_' in manName:
+                item.setBackground(QtGui.QColor('lightYellow'))
+            item.setText('starting...')
+            path = startup[manName].get('cd')
+            H.printi('Executing commands:')
+            if path:
+                path = path.strip()
+                expandedPath = os.path.expanduser(path)
+                try:
+                    os.chdir(expandedPath)
+                except Exception as e:
+                    txt = f'ERR: in chdir: {e}'
+                    mytable.item(rowPosition, Col['response']).setText(txt)
+                    return
+                print(f'cd {os.getcwd()}')
+            print(cmdstart)
+            expandedCmd = os.path.expanduser(cmdstart)
+            cmdlist = expandedCmd.split()
+            shell = startup[manName].get('shell',False)
+            H.printv(f'popen: {cmdlist}, shell:{shell}')
+            try:
+                proc = subprocess.Popen(cmdlist, shell=shell, #close_fds=True,# env=my_env,
+                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            except Exception as e:
+                H.printv(f'Exception: {e}') 
+                mytable.item(rowPosition, Col['response']).setText(str(e))
+                return
+            Window.timer.singleShot(5000,partial(self.deferredCheck,(manName,rowPosition)))
+
+        elif cmd == 'Stop':
+            mytable.item(rowPosition, Col['response']).setText('')
+            H.printv(f'stopping {manName}')
+            cmd = f'pkill -f "{process}"'
+            H.printi(f'Executing:\n{cmd}')
+            os.system(cmd)
+            time.sleep(0.1)
+            self.manAction(manName, ManCmds.index('Check'))
+
+        elif cmd == 'Command':
+            try:
+                cd = startup[manName]['cd']
+                cmd = f'cd {cd}; {cmdstart}'
+            except Exception as e:
+                cmd = cmdstart
+            print(f'Command:\n{cmd}')
+            mytable.item(rowPosition, Col['response']).setText(cmd)
+            return
+        # Action was completed successfully, cleanup the status cell
+
+    def set_headersVisibility(self, visible):
+        #print(f'set_headersVisibility {visible}')
+        Window.pargs.condensed = False
+        self.setColumnWidth(Col['action'], 10)
+        self.horizontalHeader().setVisible(visible)
+        self.verticalHeader().setVisible(visible)
+
+    def allManAction(self, cmdidx:int):
+        #print(f'allManAction: {cmdidx}')
+        if cmdidx == AllManActions.index('Edit'):
+            launch_default_editor(self.configFile)
+        elif cmdidx == AllManActions.index('Delete'):
+            idx = Window.tabWidget.currentIndex()
+            tabtext = Window.tabWidget.tabText(idx)
+            H.printi(f'Deleting {idx,tabtext}')
+            del Window.tableWidgets[tabtext]
+            Window.tabWidget.removeTab(idx)
+            self.deleteLater()# it is important to properly delete the associated widget
+        elif cmdidx == AllManActions.index('Condense'):
+            self.set_headersVisibility(False)
+        elif cmdidx == AllManActions.index('Uncondense'):
+            self.set_headersVisibility(True)
+        else:
+            for manName in self.startup:
+                #print(f'man {manName,cmdidx}')
+                if manName.startswith('tst') and cmdidx != ManCmds.index('Check'):
+                    continue
+                self.manAction(manName, cmdidx)
+
+    def deferredCheck(self, args):
+        manName,rowPosition = args
+        self.manAction(manName, ManCmds.index('Check'))
+        if 'start' not in self.item(rowPosition, Col['status']).text():
+            self.item(rowPosition, Col['response']).setText('Failed to start')
 
 #``````````````````Main Window````````````````````````````````````````````````
 class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
     pargs = None
-    tableWidgets = []
+    tableWidgets = {}
     manRow = {}
     #startup = None
     timer = QtCore.QTimer()
-    firstAction=True
 
     def __init__(self):
         super().__init__()
@@ -104,9 +215,10 @@ class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
             sys.path.append(folder)
             for fname in files:
                 mytable = self.create_mytable(folder, fname)
-                Window.tableWidgets.append(mytable)
+                tabName = fname[len(FilePrefix):-3]
+                Window.tableWidgets[tabName] = mytable
                 #print(f'Adding tab: {fname}')
-                Window.tabWidget.addTab(mytable, fname[len(FilePrefix):-3])
+                Window.tabWidget.addTab(mytable, tabName)
 
         self.setWindowTitle('manman')
         #self.show()
@@ -130,13 +242,17 @@ class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
 
         mytable =  MyTable(startup, folder+'/'+fname)
         #mytable.setWindowTitle('manman')
-        mytable.setColumnCount(4)
+        mytable.setColumnCount(len(Col))
         mytable.setHorizontalHeaderLabels(Col.keys())
-        wideRow(mytable, 0,'Operational Apps')
+        try:
+            H.printv(f'title: {module.title}')
+            wideRow(mytable, 0, module.title)
+        except:
+            wideRow(mytable, 0,'Applications')
         
         sb = QW.QComboBox()
-        sb.addItems(['Check All','Start All','Stop All', 'Edit '])
-        sb.activated.connect(allManAction)
+        sb.addItems(AllManActions)
+        sb.activated.connect(mytable.allManAction)
         sb.setToolTip('Execute selected action for all applications')
         mytable.setCellWidget(0, Col['action'], sb)
         #return mytable
@@ -163,12 +279,18 @@ class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
               QW.QTableWidgetItem('?'))
             sb = QW.QComboBox()
             sb.addItems(ManCmds)
-            sb.activated.connect(partial(manAction,manName))
-            try:    sb.setToolTip(startup[manName]['help'])
+            sb.activated.connect(partial(mytable.manAction, manName))
+            try:    sb.setToolTip(f'Control of {manName}')
             except: pass
             mytable.setCellWidget(rowPosition, Col['action'], sb)
             mytable.setItem(rowPosition, Col['response'],
               QW.QTableWidgetItem(''))
+
+        header = mytable.horizontalHeader()
+        header.setStretchLastSection(True)
+
+        if Window.pargs.condensed:
+            mytable.set_headersVisibility(False)
         return mytable
 
 def wideRow(mytable, rowPosition,txt):
@@ -184,104 +306,13 @@ def insertRow(mytable, rowPosition):
     mytable.insertRow(rowPosition)
     mytable.setRowHeight(rowPosition, 1)  
 
-def allManAction(cmdidx:int):
-    #print(f'allManAction: {cmdidx}')
-    mytable = current_mytable()
-    if cmdidx == 3:
-        launch_default_editor(mytable.configFile)
-        return
-    for manName in mytable.startup:
-        #if manName.startswith('tst'):
-        #    continue
-        manAction(manName, cmdidx)
-
-def manAction(manName, cmdObj):
-    # if called on click, then cmdObj is index in ManCmds, otherwise it is a string
-    mytable = current_mytable()
-    if Window.firstAction:
-        mytable.setColumnWidth(3, LastColumnWidth)
-        Window.firstAction = False
-    cmd = cmdObj if isinstance(cmdObj,str) else ManCmds[cmdObj]
-    rowPosition = Window.manRow[manName]
-    H.printv(f'manAction: {manName, cmd}')
-    startup = current_mytable().startup
-    cmdstart = startup[manName]['cmd']    
-    process = startup[manName].get('process', f'{cmdstart}')
-
-    if cmd == 'Check':
-        H.printv(f'checking process {process} ')
-        status = ['not running','is started'][is_process_running(process)]
-        item = mytable.item(rowPosition,Col['status'])
-        if not 'tst_' in manName:
-            color = 'lightGreen' if 'started' in status else 'pink'
-            item.setBackground(QtGui.QColor(color))
-        item.setText(status)
-            
-    elif cmd == 'Start':
-        mytable.item(rowPosition, Col['response']).setText('')
-        if is_process_running(process):
-            txt = f'Is already running manager {manName}'
-            #print(txt)
-            mytable.item(rowPosition, Col['response']).setText(txt)
-            return
-        H.printv(f'starting {manName}')
-        item = mytable.item(rowPosition, Col['status'])
-        if not 'tst_' in manName:
-            item.setBackground(QtGui.QColor('lightYellow'))
-        item.setText('starting...')
-        path = startup[manName].get('cd')
-        H.printi('Executing commands:')
-        if path:
-            path = path.strip()
-            expandedPath = os.path.expanduser(path)
-            try:
-                os.chdir(expandedPath)
-            except Exception as e:
-                txt = f'ERR: in chdir: {e}'
-                mytable.item(rowPosition, Col['response']).setText(txt)
-                return
-            print(f'cd {os.getcwd()}')
-        print(cmdstart)
-        expandedCmd = os.path.expanduser(cmdstart)
-        cmdlist = expandedCmd.split()
-        shell = startup[manName].get('shell',False)
-        H.printv(f'popen: {cmdlist}, shell:{shell}')
-        try:
-            proc = subprocess.Popen(cmdlist, shell=shell, #close_fds=True,# env=my_env,
-              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        except Exception as e:
-            H.printv(f'Exception: {e}') 
-            mytable.item(rowPosition, Col['response']).setText(str(e))
-            return
-        Window.timer.singleShot(5000,partial(deferredCheck,(manName,rowPosition)))
-
-    elif cmd == 'Stop':
-        mytable.item(rowPosition, Col['response']).setText('')
-        H.printv(f'stopping {manName}')
-        cmd = f'pkill -f "{process}"'
-        H.printi(f'Executing:\n{cmd}')
-        os.system(cmd)
-        time.sleep(0.1)
-        manAction(manName, 'Check')
-
-    elif cmd == 'Command':
-        try:
-            cd = startup[manName]['cd']
-            cmd = f'cd {cd}; {cmdstart}'
-        except Exception as e:
-            cmd = cmdstart
-        print(f'Command:\n{cmd}')
-        mytable.item(rowPosition, Col['response']).setText(cmd)
-        return
-    # Action was completed successfully, cleanup the status cell
-
-def deferredCheck(args):
-    manName,rowPosition = args
-    manAction(manName, 'Check')
-    mytable = current_mytable()
-    if 'start' not in mytable.item(rowPosition, Col['status']).text():
-        mytable.item(rowPosition, Col['response']).setText('Failed to start')
-
 def periodicCheck():
-    allManAction('Check')
+    # execute allManAction on current tab
+    current_mytable().allManAction(ManCmds.index('Check'))
+    # execute allManAction on all detached tabs
+    for tabName,mytable in Window.tableWidgets.items():
+        detached  = tabName in Window.tabWidget.detachedTabs
+        #print(f'periodic for {tabName,detached}')
+        if detached:
+            mytable.allManAction(ManCmds.index('Check'))
 

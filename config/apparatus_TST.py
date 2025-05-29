@@ -19,6 +19,8 @@ __version__ = 'v0.1.5 2025-04-26'# added 'process' to better track of processes
 # abbreviations:
 help,cmd,process,cd = ['help','cmd','process','cd']
 
+#``````````````````Properties, used by manman`````````````````````````````````
+title = 'Peak Simulator'
 startup = {
 #       Operational managers
 # liteServer-based

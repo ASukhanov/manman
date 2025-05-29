@@ -1,11 +1,10 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatuses.
 """
-__version__ = 'v0.5.0 2025-05-23'# 
+__version__ = 'v0.5.2 2025-05-28'# added --zoomin 
 
-import sys, argparse
+import sys, os, argparse
 from qtpy.QtWidgets import QApplication
-
 from . import manman, helpers
 
 #``````````````````Main```````````````````````````````````````````````````````
@@ -18,26 +17,33 @@ def main():
     parser.add_argument('-c', '--configDir', help=\
       ('Root directory of config files, one config file per apparatus, '
       'if None, then ./config directory will be used'))
+    parser.add_argument('-C', '--condensed', action='store_true', help=\
+      'Condensed arrangement of tables: no headers, narrow columns')
     parser.add_argument('-t', '--interval', default=10., help=\
       'Interval in seconds of periodic checking. If 0 then no checking')
     parser.add_argument('-v', '--verbose', action='count', default=0, help=\
       'Show more log messages (-vv: show even more).')
+    parser.add_argument('-z', '--zoomin', help=\
+      'Zoom the application window by a factor, factor must be >= 1')
     parser.add_argument('apparatus', nargs='*', help=\
       ('Path of apparatus config files, can include wildcards. '
        'If None, then an interactive dialog will be opened to select files.')),
     pargs = parser.parse_args()
+    print(f'condensed: {pargs.condensed}')
     helpers.Verbose = pargs.verbose
     if pargs.configDir is None and len(pargs.apparatus) == 0:
-        #helpers.printe('Either apparatus or configDir should be specified')
-        #sys.exit()
         pargs.configDir = 'config'
     manman.Window.pargs = pargs# transfer pargs to manman module
+
+    # handle the --zoomin
+    if pargs.zoomin is not None:
+        os.environ["QT_SCALE_FACTOR"] = pargs.zoomin
 
     # arrange keyboard interrupt to kill the program
     import signal
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     
-    #start GUI
+    # start GUI
     app = QApplication(sys.argv)
     window = manman.Window()
     window.show()
