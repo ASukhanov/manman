@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v1.0.1 2025-05-29'# FilePrefix = 'apparatus', files are sorted
+__version__ = 'v1.0.2 2025-05-30'# Fixed: mess when manager names are the same in different tabs
 #TODO: xdg_open does not launch if other editors not running. 
 
 import sys, os, time, subprocess, argparse, threading
@@ -41,7 +41,6 @@ def create_folderMap():
             files = select_files_interactively(absfolder)
         else:
             files = [absfolder+'/'+i for i in Window.pargs.apparatus]
-    print(f'files: {files}')
     for f in files:
         folder,tail = os.path.split(f)
         if not (tail.startswith(FilePrefix) and tail.endswith('.py')):
@@ -50,6 +49,7 @@ def create_folderMap():
         if folder not in folders:
             folders[folder] = []
         folders[folder].append(tail)
+
     # sort the file lists
     for folder in folders:
         folders[folder].sort()
@@ -70,45 +70,101 @@ def is_process_running(cmdstart):
 def current_mytable():
     return Window.tabWidget.currentWidget()
 class MyTable(QW.QTableWidget):
-    def __init__(self, startup, configFile):
+    def __init__(self, folder, fname, tabName):
         super().__init__()
-        self.startup = startup
-        self.configFile = configFile
+        mname = fname[:-3]
+        H.printv(f'importing {mname}')
+        try:
+            module = import_module(mname)
+        except SyntaxError as e:
+            H.printe(f'Syntax Error in {fname}: {e}')
+            sys.exit(1)
+        H.printv(f'imported {mname} {module.__version__}')
+        self.startup = module.startup
+        self.configFile = folder+'/'+fname
+        self.setColumnCount(len(Col))
+        self.setHorizontalHeaderLabels(Col.keys())
+        self.manRow = {}
+        try:
+            H.printv(f'title: {module.title}')
+            wideRow(self, 0, module.title)
+        except:
+            wideRow(self, 0,'Applications')
 
-    def manAction(self, manName, cmdIdx):
-        # if called on click, then cmdIdx is index in ManCmds, otherwise it is a string
-        #mytable = current_mytable()
-        mytable = self
-        #cmd = cmdIdx if isinstance(cmdIdx,str) else ManCmds[cmdIdx]
+        # Create AllManActions combobox in top row
+        sb = QW.QComboBox()
+        sb.addItems(AllManActions)
+        sb.activated.connect(self.tableWideAction)
+        sb.setToolTip('Execute selected action for all applications')
+        self.setCellWidget(0, Col['action'], sb)
+
+        # Set up all rows 
+        operationalManager = True
+        for manName in self.startup:
+            rowPosition = self.rowCount()
+            if manName.startswith('tst_'):
+                if operationalManager:
+                    operationalManager = False
+                    wideRow(self, rowPosition,'Test Apps')
+                    rowPosition += 1
+            insertRow(self, rowPosition)
+            self.manRow[manName] = rowPosition
+            item = QW.QTableWidgetItem(manName)
+            item.setTextAlignment(QtCore.Qt.AlignCenter)
+            try:    item.setToolTip(startup[manName]['help'])
+            except: pass
+            self.setItem(rowPosition, Col['Applications'], item)
+            if operationalManager:
+                item.setFont(BoldFont)
+                item.setBackground(QtGui.QColor('lightCyan'))
+            self.setItem(rowPosition, Col['status'],
+              QW.QTableWidgetItem('?'))
+            sb = QW.QComboBox()
+            sb.addItems(ManCmds)
+            sb.activated.connect(partial(self.manAction, manName))
+            try:    sb.setToolTip(f'Control of {manName}')
+            except: pass
+            self.setCellWidget(rowPosition, Col['action'], sb)
+            self.setItem(rowPosition, Col['response'],
+              QW.QTableWidgetItem(''))
+
+        # Set up headers
+        header = self.horizontalHeader()
+        header.setStretchLastSection(True)
+        if Window.pargs.condensed:
+            self.set_headersVisibility(False)
+
+    def manAction(self, manName:str, cmdIdx:int):
+        # Execute action, indexed by cmdIdx
         try:
             cmd = ManCmds[cmdIdx]
         except Exception as e:
             H.printw(f'ManName,cmdIdx = {manName,cmdIdx}')
             return
-        rowPosition = Window.manRow[manName]
-        #H.printvv(f'manAction: {manName, cmd}')
-        startup = mytable.startup
+        rowPosition = self.manRow[manName]
+        H.printvv(f'manAction: {manName, cmd}')
+        startup = self.startup
         cmdstart = startup[manName]['cmd']
         process = startup[manName].get('process', f'{cmdstart}')
 
         if cmd == 'Check':
             H.printvv(f'checking process {process} ')
             status = ['not running','is started'][is_process_running(process)]
-            item = mytable.item(rowPosition,Col['status'])
+            item = self.item(rowPosition,Col['status'])
             if not 'tst_' in manName:
                 color = 'lightGreen' if 'started' in status else 'pink'
                 item.setBackground(QtGui.QColor(color))
             item.setText(status)
 
         elif cmd == 'Start':
-            mytable.item(rowPosition, Col['response']).setText('')
+            self.item(rowPosition, Col['response']).setText('')
             if is_process_running(process):
                 txt = f'Is already running manager {manName}'
                 #print(txt)
-                mytable.item(rowPosition, Col['response']).setText(txt)
+                self.item(rowPosition, Col['response']).setText(txt)
                 return
             H.printv(f'starting {manName}')
-            item = mytable.item(rowPosition, Col['status'])
+            item = self.item(rowPosition, Col['status'])
             if not 'tst_' in manName:
                 item.setBackground(QtGui.QColor('lightYellow'))
             item.setText('starting...')
@@ -121,7 +177,7 @@ class MyTable(QW.QTableWidget):
                     os.chdir(expandedPath)
                 except Exception as e:
                     txt = f'ERR: in chdir: {e}'
-                    mytable.item(rowPosition, Col['response']).setText(txt)
+                    self.item(rowPosition, Col['response']).setText(txt)
                     return
                 print(f'cd {os.getcwd()}')
             print(cmdstart)
@@ -134,12 +190,12 @@ class MyTable(QW.QTableWidget):
                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             except Exception as e:
                 H.printv(f'Exception: {e}') 
-                mytable.item(rowPosition, Col['response']).setText(str(e))
+                self.item(rowPosition, Col['response']).setText(str(e))
                 return
             Window.timer.singleShot(5000,partial(self.deferredCheck,(manName,rowPosition)))
 
         elif cmd == 'Stop':
-            mytable.item(rowPosition, Col['response']).setText('')
+            self.item(rowPosition, Col['response']).setText('')
             H.printv(f'stopping {manName}')
             cmd = f'pkill -f "{process}"'
             H.printi(f'Executing:\n{cmd}')
@@ -153,20 +209,21 @@ class MyTable(QW.QTableWidget):
                 cmd = f'cd {cd}; {cmdstart}'
             except Exception as e:
                 cmd = cmdstart
-            print(f'Command:\n{cmd}')
-            mytable.item(rowPosition, Col['response']).setText(cmd)
+            print(f'Command in row {rowPosition}:\n{cmd}')
+            self.item(rowPosition, Col['response']).setText(cmd)
             return
         # Action was completed successfully, cleanup the status cell
 
-    def set_headersVisibility(self, visible):
+    def set_headersVisibility(self, visible:bool):
         #print(f'set_headersVisibility {visible}')
         Window.pargs.condensed = False
         self.setColumnWidth(Col['action'], 10)
         self.horizontalHeader().setVisible(visible)
         self.verticalHeader().setVisible(visible)
 
-    def allManAction(self, cmdidx:int):
-        #print(f'allManAction: {cmdidx}')
+    def tableWideAction(self, cmdidx:int):
+        # Execute table-wide action
+        #print(f'tableWideAction: {cmdidx}')
         if cmdidx == AllManActions.index('Edit'):
             launch_default_editor(self.configFile)
         elif cmdidx == AllManActions.index('Delete'):
@@ -197,8 +254,6 @@ class MyTable(QW.QTableWidget):
 class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
     pargs = None
     tableWidgets = {}
-    manRow = {}
-    #startup = None
     timer = QtCore.QTimer()
 
     def __init__(self):
@@ -208,96 +263,32 @@ class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
         if len(folders) == 0:
             sys.exit(1)
         H.printi(f'Configuration files: {folders}')
+        self.setWindowTitle('manman')
 
-        # create tabWidget
+        # Create tabWidget
         Window.tabWidget = detachable_tabs.DetachableTabWidget()
         Window.tabWidget.currentChanged.connect(periodicCheck)
         self.setCentralWidget(Window.tabWidget)
         H.printv(f'tabWidget created')
 
+        # Add tables, configured from files, to tabs
         for folder,files in folders.items():
             sys.path.append(folder)
             for fname in files:
-                mytable = self.create_mytable(folder, fname)
                 tabName = fname[len(FilePrefix):-3]
+                mytable = MyTable(folder, fname, tabName)
                 Window.tableWidgets[tabName] = mytable
                 #print(f'Adding tab: {fname}')
                 Window.tabWidget.addTab(mytable, tabName)
 
-        self.setWindowTitle('manman')
-        #self.show()
-
+        # Update tables and set up periodic check
         periodicCheck()
         if Window.pargs.interval != 0.:
             Window.timer.timeout.connect(periodicCheck)
             Window.timer.setInterval(int(Window.pargs.interval*1000.))
             Window.timer.start()
 
-    def create_mytable(self, folder, fname):
-        mname = fname[:-3]
-        H.printv(f'importing {mname}')
-        try:
-            module = import_module(mname)
-        except SyntaxError as e:
-            H.printe(f'Syntax Error in {fname}: {e}')
-            sys.exit(1)
-        H.printv(f'imported {mname} {module.__version__}')
-        startup = module.startup
-
-        mytable =  MyTable(startup, folder+'/'+fname)
-        #mytable.setWindowTitle('manman')
-        mytable.setColumnCount(len(Col))
-        mytable.setHorizontalHeaderLabels(Col.keys())
-        try:
-            H.printv(f'title: {module.title}')
-            wideRow(mytable, 0, module.title)
-        except:
-            wideRow(mytable, 0,'Applications')
-        
-        sb = QW.QComboBox()
-        sb.addItems(AllManActions)
-        sb.activated.connect(mytable.allManAction)
-        sb.setToolTip('Execute selected action for all applications')
-        mytable.setCellWidget(0, Col['action'], sb)
-        #return mytable
-
-        operationalManager = True
-        for manName in startup:
-            rowPosition = mytable.rowCount()
-            if manName.startswith('tst_'):
-                if operationalManager:
-                    operationalManager = False
-                    wideRow(mytable, rowPosition,'Test Apps')
-                    rowPosition += 1
-            insertRow(mytable, rowPosition)
-            self.manRow[manName] = rowPosition
-            item = QW.QTableWidgetItem(manName)
-            item.setTextAlignment(QtCore.Qt.AlignCenter)
-            try:    item.setToolTip(startup[manName]['help'])
-            except: pass
-            mytable.setItem(rowPosition, Col['Applications'], item)
-            if operationalManager:
-                item.setFont(BoldFont)
-                item.setBackground(QtGui.QColor('lightCyan'))
-            mytable.setItem(rowPosition, Col['status'],
-              QW.QTableWidgetItem('?'))
-            sb = QW.QComboBox()
-            sb.addItems(ManCmds)
-            sb.activated.connect(partial(mytable.manAction, manName))
-            try:    sb.setToolTip(f'Control of {manName}')
-            except: pass
-            mytable.setCellWidget(rowPosition, Col['action'], sb)
-            mytable.setItem(rowPosition, Col['response'],
-              QW.QTableWidgetItem(''))
-
-        header = mytable.horizontalHeader()
-        header.setStretchLastSection(True)
-
-        if Window.pargs.condensed:
-            mytable.set_headersVisibility(False)
-        return mytable
-
-def wideRow(mytable, rowPosition,txt):
+def wideRow(mytable, rowPosition, txt):
     insertRow(mytable, rowPosition)
     mytable.setSpan(rowPosition,0,1,2)
     item = QW.QTableWidgetItem(txt)
@@ -311,12 +302,12 @@ def insertRow(mytable, rowPosition):
     mytable.setRowHeight(rowPosition, 1)  
 
 def periodicCheck():
-    # execute allManAction on current tab
-    current_mytable().allManAction(ManCmds.index('Check'))
-    # execute allManAction on all detached tabs
+    # execute tableWideAction on current tab
+    current_mytable().tableWideAction(ManCmds.index('Check'))
+    # execute tableWideAction on all detached tabs
     for tabName,mytable in Window.tableWidgets.items():
         detached  = tabName in Window.tabWidget.detachedTabs
         #print(f'periodic for {tabName,detached}')
         if detached:
-            mytable.allManAction(ManCmds.index('Check'))
+            mytable.tableWideAction(ManCmds.index('Check'))
 
