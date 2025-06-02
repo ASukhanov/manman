@@ -22,14 +22,16 @@ options:
                         be >= 1 (default: None)
 ```
 ## Control of all applications in a table
-The action cell in top row of the table executes table-wide commands: **Check All, Start All, Stop All**
-It also has commands to
-- delete current tab (Delete),
-- edit the table (Edit),
-- condense and expannd table arrangement (Condense and Uncondense).
+The commands are executed by right clicking on the cells in leftmost column.
+The top left cell executes table-wide commands: 
+**Check All, Start All, Stop All**
+It also holds commands to
+- delete current tab (**Delete**),
+- edit the table (**Edit**),
+- condense and expannd table arrangement (**Condense and Uncondense**).
 
 ## Configuration
-The following actions are defined in the combobox, related to the application:
+The following actions are defined for managers:
   - **Check**
   - **Start**
   - **Stop**
@@ -48,10 +50,10 @@ Supported keys are:
   - **'help'**: it will be used as a tooltip,
 
 ## Demo
-  - **python -m manman config/apparatus_*.py**<br>
+  - **python -m manman config/apparatus*.py**<br>
 Control all apparatuses, defined in the ./config directory.
 Each apparatus will be controlled in a separate tab.
-  - **python -m manman -c config apparatus_test.py apparatus_TST.py**<br>
+  - **python -m manman -c config apparatus1_test.py apparatus3_TST.py**<br>
 Control two apparatuses from the ./config directory
   - **python -m manman -c config**<br>
 Interacively select apparatuses from the ./config directory<br>

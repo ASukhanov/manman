@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v1.0.4 2025-06-01'# Minimal row height set to 20.
+__version__ = 'v1.1.0 2025-06-02'# Use right click dropdown menu in first column instead of combo boxes
 #TODO: xdg_open does not launch if other editors not running. 
 
 import sys, os, time, subprocess, argparse, threading
@@ -15,9 +15,9 @@ from . import detachable_tabs
 
 #``````````````````Constants``````````````````````````````````````````````````
 ManCmds =       ['Check',    'Start',    'Stop',     'Command']
-AllManActions = ['Check All','Start All','Stop All', 'Edit', 'Delete',
-                'Condense', 'Uncondense']
-Col = {'Applications':0, 'status':1, 'action':2, 'response':3}
+AllManCmds = ['Check All','Start All','Stop All', 'Edit', 'Delete',
+                'Condense', 'Uncondense']#, 'Exit All']
+Col = {'Applications':0, 'status':1, 'response':2}
 BoldFont = QtGui.QFont("Helvetica", 14, QtGui.QFont.Bold)
 FilePrefix = 'apparatus'
 MinimalRowHeight = 20
@@ -92,13 +92,6 @@ class MyTable(QW.QTableWidget):
         except:
             wideRow(self, 0,'Applications')
 
-        # Create AllManActions combobox in top row
-        sb = QW.QComboBox()
-        sb.addItems(AllManActions)
-        sb.activated.connect(self.tableWideAction)
-        sb.setToolTip('Execute selected action for all applications of this tab')
-        self.setCellWidget(0, Col['action'], sb)
-
         # Set up all rows 
         operationalManager = True
         for manName,props in self.startup.items():
@@ -120,12 +113,6 @@ class MyTable(QW.QTableWidget):
                 item.setBackground(QtGui.QColor('lightCyan'))
             self.setItem(rowPosition, Col['status'],
               QW.QTableWidgetItem('?'))
-            sb = QW.QComboBox()
-            sb.addItems(ManCmds)
-            sb.activated.connect(partial(self.manAction, manName))
-            try:    sb.setToolTip(f'Control of {manName}')
-            except: pass
-            self.setCellWidget(rowPosition, Col['action'], sb)
             self.setItem(rowPosition, Col['response'],
               QW.QTableWidgetItem(''))
 
@@ -135,18 +122,36 @@ class MyTable(QW.QTableWidget):
         if Window.pargs.condensed:
             self.set_headersVisibility(False)
 
-    def manAction(self, manName:str, cmdIdx:int):
-        # Execute action, indexed by cmdIdx
-        try:
-            cmd = ManCmds[cmdIdx]
-        except Exception as e:
-            H.printw(f'ManName,cmdIdx = {manName,cmdIdx}')
+    def contextMenuEvent(self, event):
+        menu = QW.QMenu()
+        index = self.indexAt(event.pos())
+        if not index.isValid():
             return
-        rowPosition = self.manRow[manName]
+        if index.column() != 0:
+            return
+        row = index.row()
+        cmds = AllManCmds if row == 0 else ManCmds
+        for cmd in cmds:
+            #print(f'addAction: {cmd}')
+            action = menu.addAction(cmd)
+        res = menu.exec_(event.globalPos())
+        manName = index.data()
+        if res is None:
+            return
+        cmd = res.text()
+        if row == 0:
+            self.tableWideAction(cmd)
+        else:
+            self.manAction(manName, cmd)
+
+    def manAction(self, manName:str, cmd:str):
+        # Execute action
         H.printvv(f'manAction: {manName, cmd}')
+        rowPosition = self.manRow[manName]
         startup = self.startup
         cmdstart = startup[manName]['cmd']
         process = startup[manName].get('process', f'{cmdstart}')
+        #print(f"pos: {rowPosition},{Col['response']}")
 
         if cmd == 'Check':
             H.printvv(f'checking process {process} ')
@@ -216,32 +221,34 @@ class MyTable(QW.QTableWidget):
 
     def set_headersVisibility(self, visible:bool):
         #print(f'set_headersVisibility {visible}')
-        #self.setColumnWidth(Col['action'], 40)
         self.horizontalHeader().setVisible(visible)
         self.verticalHeader().setVisible(visible)
 
-    def tableWideAction(self, cmdidx:int):
+    def tableWideAction(self, cmd:str):
         # Execute table-wide action
-        #print(f'tableWideAction: {cmdidx}')
-        if cmdidx == AllManActions.index('Edit'):
+        #print(f'tableWideAction: {cmd}')
+        if cmd == 'Edit':
             launch_default_editor(self.configFile)
-        elif cmdidx == AllManActions.index('Delete'):
+        elif cmd == 'Delete':
             idx = Window.tabWidget.currentIndex()
             tabtext = Window.tabWidget.tabText(idx)
-            H.printi(f'Deleting {idx,tabtext}')
+            H.printi(f'Deleting tab {idx,tabtext}')
             del Window.tableWidgets[tabtext]
             Window.tabWidget.removeTab(idx)
             self.deleteLater()# it is important to properly delete the associated widget
-        elif cmdidx == AllManActions.index('Condense'):
+        elif cmd == 'Condense':
             self.set_headersVisibility(False)
-        elif cmdidx == AllManActions.index('Uncondense'):
+        elif cmd == 'Uncondense':
             self.set_headersVisibility(True)
-        else:
+        elif cmd == 'Exit All':
+            self.exit_all()
+        else:# Delegate command to managers
             for manName in self.startup:
-                #print(f'man {manName,cmdidx}')
-                if manName.startswith('tst') and cmdidx != ManCmds.index('Check'):
+                cmd = cmd.split()[0]# use first word of the command
+                #print(f'man {manName,cmd}')
+                if manName.startswith('tst') and cmd != 'Check':
                     continue
-                self.manAction(manName, cmdidx)
+                self.manAction(manName, cmd)
 
     def deferredCheck(self, args):
         manName,rowPosition = args
@@ -249,6 +256,17 @@ class MyTable(QW.QTableWidget):
         if 'start' not in self.item(rowPosition, Col['status']).text():
             self.item(rowPosition, Col['response']).setText('Failed to start')
 
+    '''
+    def exit_all(self):
+        print('>exit_all')
+        import signal
+        #signal.raise_signal(signal.SIG_DFL)
+        #signal.raise_signal(signal.SIGQUIT)
+        #signal.raise_signal(signal.SIGINT)
+        #signal.raise_signal(signal.SIGKILL)
+        #signal.raise_signal(signal.SIGSTOP)
+        #sys.exit(0)
+    '''
 #``````````````````Main Window````````````````````````````````````````````````
 class Window(QW.QMainWindow):# it may sense to subclass it from QW.QMainWindow
     pargs = None
@@ -304,11 +322,11 @@ def insertRow(mytable, rowPosition):
 
 def periodicCheck():
     # execute tableWideAction on current tab
-    current_mytable().tableWideAction(ManCmds.index('Check'))
+    current_mytable().tableWideAction('Check')
     # execute tableWideAction on all detached tabs
     for tabName,mytable in Window.tableWidgets.items():
         detached  = tabName in Window.tabWidget.detachedTabs
         #print(f'periodic for {tabName,detached}')
         if detached:
-            mytable.tableWideAction(ManCmds.index('Check'))
+            mytable.tableWideAction('Check')
 
