@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v1.0.3 2025-06-01'# Fixed: missing tooltips in Application column
+__version__ = 'v1.0.4 2025-06-01'# Minimal row height set to 20.
 #TODO: xdg_open does not launch if other editors not running. 
 
 import sys, os, time, subprocess, argparse, threading
@@ -20,7 +20,7 @@ AllManActions = ['Check All','Start All','Stop All', 'Edit', 'Delete',
 Col = {'Applications':0, 'status':1, 'action':2, 'response':3}
 BoldFont = QtGui.QFont("Helvetica", 14, QtGui.QFont.Bold)
 FilePrefix = 'apparatus'
-
+MinimalRowHeight = 20
 #``````````````````Helpers````````````````````````````````````````````````````
 def select_files_interactively(directory, title=f'Select {FilePrefix}*.py files'):
     dialog = QW.QFileDialog()
@@ -84,6 +84,7 @@ class MyTable(QW.QTableWidget):
         self.configFile = folder+'/'+fname
         self.setColumnCount(len(Col))
         self.setHorizontalHeaderLabels(Col.keys())
+        self.verticalHeader().setMinimumSectionSize(MinimalRowHeight)
         self.manRow = {}
         try:
             H.printv(f'title: {module.title}')
@@ -212,12 +213,10 @@ class MyTable(QW.QTableWidget):
             print(f'Command in row {rowPosition}:\n{cmd}')
             self.item(rowPosition, Col['response']).setText(cmd)
             return
-        # Action was completed successfully, cleanup the status cell
 
     def set_headersVisibility(self, visible:bool):
         #print(f'set_headersVisibility {visible}')
-        Window.pargs.condensed = False
-        self.setColumnWidth(Col['action'], 10)
+        #self.setColumnWidth(Col['action'], 40)
         self.horizontalHeader().setVisible(visible)
         self.verticalHeader().setVisible(visible)
 
@@ -299,7 +298,9 @@ def wideRow(mytable, rowPosition, txt):
 
 def insertRow(mytable, rowPosition):
     mytable.insertRow(rowPosition)
+    #print(f'row {rowPosition}, {mytable.rowHeight(rowPosition)}')
     mytable.setRowHeight(rowPosition, 1)  
+    #print(f'row {rowPosition}, {mytable.rowHeight(rowPosition)}')
 
 def periodicCheck():
     # execute tableWideAction on current tab
