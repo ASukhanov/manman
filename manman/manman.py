@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v1.0.2 2025-05-30'# Fixed: mess when manager names are the same in different tabs
+__version__ = 'v1.0.3 2025-06-01'# Fixed: missing tooltips in Application column
 #TODO: xdg_open does not launch if other editors not running. 
 
 import sys, os, time, subprocess, argparse, threading
@@ -95,12 +95,12 @@ class MyTable(QW.QTableWidget):
         sb = QW.QComboBox()
         sb.addItems(AllManActions)
         sb.activated.connect(self.tableWideAction)
-        sb.setToolTip('Execute selected action for all applications')
+        sb.setToolTip('Execute selected action for all applications of this tab')
         self.setCellWidget(0, Col['action'], sb)
 
         # Set up all rows 
         operationalManager = True
-        for manName in self.startup:
+        for manName,props in self.startup.items():
             rowPosition = self.rowCount()
             if manName.startswith('tst_'):
                 if operationalManager:
@@ -111,7 +111,7 @@ class MyTable(QW.QTableWidget):
             self.manRow[manName] = rowPosition
             item = QW.QTableWidgetItem(manName)
             item.setTextAlignment(QtCore.Qt.AlignCenter)
-            try:    item.setToolTip(startup[manName]['help'])
+            try:    item.setToolTip(props['help'])
             except: pass
             self.setItem(rowPosition, Col['Applications'], item)
             if operationalManager:
