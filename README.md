@@ -1,37 +1,20 @@
 # manman
 GUI for deployment and monitoring of servers and applications
-related to specific apparatuses.<br>
-```
-usage: python -m manman [-h] [-c CONFIGDIR] [-t INTERVAL] [-v] [apparatus ...]
-positional arguments:
-  apparatus             Path of apparatus config files, can include wildcards.
-                        If None, then an interactive dialog will be opened to
-                        select files. (default: None)
-options:
-  -c CONFIGDIR, --configDir CONFIGDIR
-                        Root directory of config files, one config file per
-                        apparatus, if None, then ./config directory will be
-                        used (default: None)
-  -C, --condensed       Condensed arrangement of tables: no headers, narrow
-                        columns (default: False)
-  -t INTERVAL, --interval INTERVAL
-                        Interval in seconds of periodic checking. If 0 then no
-                        checking (default: 10.0)
-  -z ZOOMIN, --zoomin ZOOMIN
-                        Scale the application window by a factor, it must
-                        be >= 1 (default: None)
-```
-## Control of all applications in a table
-The commands are executed by right clicking on the cells in leftmost column.
-The top left cell executes table-wide commands: 
-**Check All, Start All, Stop All**
+associated with specific tasks or apparatuses.<br>
+
+The GUI can control multiple independent apparatuses in different tabs.
+
+The 'status' column dynamically shows the color-coded status of the server.
+
+The commands are executed by right clicking on the cells in the 'Applications' (leftmost) column.<br>
+The top left cell executes table-wide commands:<br>
+**Check All, Start All, Stop All**<br>
 It also holds commands to
 - delete current tab (**Delete**),
-- edit the table (**Edit**),
+- edit the table of the current tab(**Edit**),
 - condense and expannd table arrangement (**Condense and Uncondense**).
 
-## Configuration
-The following actions are defined for managers:
+The following actions are defined for regular rows:
   - **Check**
   - **Start**
   - **Stop**
@@ -51,11 +34,11 @@ Supported keys are:
 
 ## Demo
   - **python -m manman config/apparatus*.py**<br>
-Control all apparatuses, defined in the ./config directory.
+Control of all apparatuses, defined in the ./config directory.
 Each apparatus will be controlled in a separate tab.
   - **python -m manman -c config apparatus1_test.py apparatus3_TST.py**<br>
 Control two apparatuses from the ./config directory
-  - **python -m manman -c config**<br>
+  - **python -m manman -i -c config**<br>
 Interacively select apparatuses from the ./config directory<br>
 ![manman](docs/manman.png)
 
