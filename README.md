@@ -11,7 +11,7 @@ The top left cell executes table-wide commands:```Check All, Start All, Stop All
 It also holds commands to
 - delete current tab (**Delete**),
 - edit the table of the current tab (**Edit**),
-- condense and expannd table arrangement (**Condense and Uncondense**).
+- condense and expand table arrangement (**Condense and Uncondense**).
 
 The following actions are defined for regular rows:
   - **Check**
