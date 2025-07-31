@@ -1,7 +1,7 @@
 # manman
 GUI for deployment and monitoring of servers and applications
 associated with specific tasks or apparatuses.<br>
-
+![condensed](docs/manman_condensed.jpg)<br>
 The GUI can control multiple independent apparatuses in different tabs.
 
 The 'status' column dynamically shows the color-coded status of the server.
