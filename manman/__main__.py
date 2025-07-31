@@ -1,7 +1,7 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatuses.
 """
-__version__ = 'v1.0.0 2025-05-28'# added --condensed
+__version__ = 'v1.1.1 2025-07-30'# added --interactive
 
 import sys, os, argparse
 from qtpy.QtWidgets import QApplication
@@ -19,6 +19,8 @@ def main():
       'if None, then ./config directory will be used'))
     parser.add_argument('-C', '--condensed', action='store_true', help=\
       'Condensed arrangement of tables: no headers, narrow columns')
+    parser.add_argument('-i', '--interactive', default=False, action='store_true', help=
+      'Select files interactively')
     parser.add_argument('-t', '--interval', default=10., help=\
       'Interval in seconds of periodic checking. If 0 then no checking')
     parser.add_argument('-v', '--verbose', action='count', default=0, help=\

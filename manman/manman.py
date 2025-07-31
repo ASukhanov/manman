@@ -1,10 +1,10 @@
 """GUI for application deployment and monitoring of servers and 
 applications related to specific apparatus.
 """
-__version__ = 'v1.1.0 2025-06-02'# Use right click dropdown menu in first column instead of combo boxes
+__version__ = 'v1.1.1 2025-07-30'# hamdle 'interactive' option
 #TODO: xdg_open does not launch if other editors not running. 
 
-import sys, os, time, subprocess, argparse, threading
+import sys, os, time, subprocess, argparse, threading, glob
 from functools import partial
 from importlib import import_module
 
@@ -25,7 +25,7 @@ MinimalRowHeight = 20
 def select_files_interactively(directory, title=f'Select {FilePrefix}*.py files'):
     dialog = QW.QFileDialog()
     dialog.setFileMode( QW.QFileDialog.FileMode() )
-    ffilter = f'pypet ({FilePrefix}*.py)'
+    ffilter = f'manman ({FilePrefix}*.py)'
     files = dialog.getOpenFileNames( None, title, directory, ffilter)[0]
     return files
 
@@ -37,10 +37,15 @@ def create_folderMap():
         files = [os.path.abspath(i) for i in Window.pargs.apparatus]
     else:
         absfolder = os.path.abspath(Window.pargs.configDir)
-        if len(Window.pargs.apparatus) == 0:
-            files = select_files_interactively(absfolder)
+        if Window.pargs.interactive:
+            if len(Window.pargs.apparatus) == 0:
+                files = select_files_interactively(absfolder)
+            else:
+                files = [absfolder+'/'+i for i in Window.pargs.apparatus]
         else:
-            files = [absfolder+'/'+i for i in Window.pargs.apparatus]
+            s = f'{absfolder}/*)'
+            l = glob.glob('apparatus*.py', root_dir=absfolder)
+            files = [absfolder+'/'+i for i in l]
     for f in files:
         folder,tail = os.path.split(f)
         if not (tail.startswith(FilePrefix) and tail.endswith('.py')):
